@@ -1,0 +1,64 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5" style="max-width: 450px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="mb-4 text-center">Login</h3>
+
+            <div id="errorMessage" class="alert alert-danger d-none"></div>
+
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label">Username or Email</label>
+                    <input type="text" class="form-control" id="usernameOrEmail" required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Log In</button>
+            </form>
+
+            <p class="mt-3 text-center">
+                Don't have an account? <a href="/register">Register here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const data = {
+            userNameOrEmail: document.getElementById("usernameOrEmail").value,
+            password: document.getElementById("password").value
+        };
+
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            document.getElementById("errorMessage").classList.remove("d-none");
+            document.getElementById("errorMessage").innerText = result.message || "Login failed.";
+            return;
+        }
+
+        // Save token in localStorage
+        localStorage.setItem("token", result.token);
+
+        // Redirect to dashboard page (change this to your home page)
+        window.location.href = "/dashboard";
+    });
+</script>
+
+

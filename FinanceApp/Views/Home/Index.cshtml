@@ -2,7 +2,47 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- HERO SECTION -->
+<div class="bg-primary text-light py-5 mb-4 shadow-sm">
+    <div class="container text-center">
+        <h1 class="fw-bold">Welcome to FinanceApp</h1>
+        <p class="lead mb-0">Track expenses, manage budgets, and stay in control.</p>
+    </div>
+</div>
+
+<!-- DASHBOARD PREVIEW CARDS -->
+<div class="container mb-5">
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold">Total Balance</h5>
+                    <p class="display-6 text-primary" id="balance-display">—</p>
+                    <p class="text-muted small">Your net financial overview</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold">Monthly Expenses</h5>
+                    <p class="display-6 text-danger" id="expenses-display">—</p>
+                    <p class="text-muted small">Spending this month</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold">Upcoming Bills</h5>
+                    <p class="display-6 text-warning" id="bills-display">—</p>
+                    <p class="text-muted small">Never miss a payment</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
