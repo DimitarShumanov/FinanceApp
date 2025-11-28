@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5" style="max-width: 450px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="mb-4 text-center">Create Account</h3>
+
+            <div id="errorMessage" class="alert alert-danger d-none"></div>
+
+            <form id="registerForm">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input id="userName" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input id="email" type="email" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Display Name</label>
+                    <input id="displayName" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Currency</label>
+                    <select id="currency" class="form-select">
+                        <option value="BGN">BGN</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input id="password" type="password" class="form-control" required />
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">Register</button>
+            </form>
+
+            <p class="mt-3 text-center">
+                Already have an account? <a href="/login">Log in</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const data = {
+            userName: document.getElementById("userName").value,
+            email: document.getElementById("email").value,
+            displayName: document.getElementById("displayName").value,
+            currency: document.getElementById("currency").value,
+            password: document.getElementById("password").value
+        };
+
+        const response = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            const errDiv = document.getElementById("errorMessage");
+            errDiv.classList.remove("d-none");
+            errDiv.innerText = result.message || "Registration failed.";
+            return;
+        }
+
+        // Save token
+        localStorage.setItem("token", result.token);
+
+        window.location.href = "/dashboard";
+    });
+</script>
+
