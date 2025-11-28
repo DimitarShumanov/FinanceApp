@@ -29,7 +29,7 @@ namespace FinanceApp.Controllers
         {
             var transaction = await _context.Transactions
                 .Include(t => t.Category)
-                .FirstOrDefaultAsync(t->t.Id == id);
+                .FirstOrDefaultAsync(t=>t.Id == id);
 
             if (transaction == null)
                 return NotFound("Transaction is not found!");

@@ -1,12 +1,11 @@
 ﻿using FinanceApp.Models;
+using FinanceApp.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceApp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class CategoryController : ControllerBase
+    public class CategoryController : Controller
     {
         private readonly ApplicationDbContext _context;
 
@@ -15,79 +14,70 @@ namespace FinanceApp.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+        public async Task<ActionResult> Index()
         {
-            return await _context.Categories.ToListAsync();
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> GetCategory(int id)
-        {
-            var category = await _context.Categories.FindAsync(id);
-
-            if (category == null)
-                return NotFound();
-
-            return category;
+            var categories = await _context.Categories.ToListAsync();
+            return View(categories);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Category>> CreateCategory(Category category)
+        public async Task<ActionResult<Category>> Create(CategoryDto categoryDto)
         {
-            if (category == null)
-                return BadRequest("Category is empty!");
+            if (ModelState.IsValid)
+                return View(categoryDto);
 
-            if (string.IsNullOrEmpty(category.Name))
-                return BadRequest("Category Name is required!");
-
-            if (string.IsNullOrEmpty(category.UserId))
-                return BadRequest("UserId is required!");
-
-            var exists = await _context.Categories.AnyAsync(c => c.Name == category.Name && c.UserId == category.UserId);
-
-            if (exists)
+            var category = new Category
             {
-                return BadRequest($"Category \"{category}\" already exists!");
-            }
+                Name = categoryDto.Name,
+                IsIncome = categoryDto.IsIncome,
+                UserId = User.Identity.Name
+            };
 
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
+            return RedirectToAction("Index");
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateCategory(int id, [FromBody] string newName, [FromBody] bool isIncome)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (string.IsNullOrEmpty(newName))
-                return BadRequest("Category Name is required!");
-
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
-                return NotFound("Category not found!");
+                return NotFound();
 
-            category.Name = newName;
-            category.IsIncome = isIncome;
+            var dto = new CategoryDto
+            {
+                Name = category.Name,
+                IsIncome = category.IsIncome
+            };
 
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return View(dto);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCategory(int id)
+        [HttpPost]
+        public async Task<IActionResult> Edit(int id, CategoryDto categoryDto)
         {
             var category = await _context.Categories.FindAsync(id);
+            if (category == null)
+                return NotFound();
 
+            category.Name = categoryDto.Name;
+            category.IsIncome = categoryDto.IsIncome;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index");
+        }
+
+        public async Task<IActionResult> Delete(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
             if (category == null)
                 return NotFound();
 
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return RedirectToAction("Index");
         }
-
     }
 }
