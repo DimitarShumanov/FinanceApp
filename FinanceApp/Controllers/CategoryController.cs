@@ -20,6 +20,11 @@ namespace FinanceApp.Controllers
             return View(categories);
         }
 
+        public IActionResult Create()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<ActionResult<Category>> Create(CategoryDto categoryDto)
         {

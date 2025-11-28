@@ -1,13 +1,12 @@
 ﻿using FinanceApp.Models;
+using FinanceApp.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.VisualBasic;
 
 namespace FinanceApp.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class TransactionController : ControllerBase
+    public class TransactionController : Controller
     {
         private readonly ApplicationDbContext _context;
 
@@ -16,80 +15,118 @@ namespace FinanceApp.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Models.Transaction>>> GetTransactions()
+        public async Task<IActionResult> Index()
         {
-            return await _context.Transactions
+            var userId = User.Identity.Name;
+
+            var transactions = await _context.Transactions
                 .Include(t => t.Category)
+                .Where(t => t.UserId == userId)
+                .OrderByDescending(t => t.Date)
                 .ToListAsync();
+
+            return View(transactions);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Transaction>> GetTransaction(int id)
+        public IActionResult Create()
         {
-            var transaction = await _context.Transactions
-                .Include(t => t.Category)
-                .FirstOrDefaultAsync(t=>t.Id == id);
-
-            if (transaction == null)
-                return NotFound("Transaction is not found!");
-
-            return Ok(transaction);
+            ViewBag.Categories = _context.Categories.ToList();
+            return View();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Transaction>> CreateTransaction(Transaction transaction)
+        public async Task<IActionResult> Create(TransactionDto transactionDto)
         {
-            if (transaction.Amount <= 0)
-                return BadRequest("Amount must be greater than zero!");
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Categories = _context.Categories.ToList();
+                return View(transactionDto);
+            }
 
-            if (transaction.CategoryId <= 0)
-                return BadRequest("Category Id is required!");
-
-            var category = await _context.Categories.FindAsync(transaction.CategoryId);
+            var category = await _context.Categories.FindAsync(transactionDto.CategoryId);
             if (category == null)
-                return BadRequest("Invalid category ID");
+            {
+                ModelState.AddModelError("CatgeoryId", "Invalid category!");
+                ViewBag.Category = _context.Categories.ToList();
+                return View(transactionDto);
+            }
 
-            if (transaction.Date == default)
-                transaction.Date = DateTime.Now;
+            var transaction = new Transaction
+            {
+                UserId = User.Identity.Name,
+                CategoryId = transactionDto.CategoryId,
+                Date = transactionDto.Date == default ? DateTime.Now : transactionDto.Date,
+                Amount = transactionDto.Amount,
+                Description = transactionDto.Description,
+            };
 
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetTransaction),
-                new { id = transaction.Id }, transaction);
+            
+            return RedirectToAction("Index");
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTransaction(int id, Transaction transaction)
-        {
-            if (id != transaction.Id)
-                return BadRequest("ID mismatch!");
-
-            if (transaction.Amount <= 0)
-                return BadRequest("Invalid amount!");
-
-            var category = await _context.Categories.FindAsync(transaction.CategoryId);
-            if (category == null)
-                return BadRequest("Invalid category ID!");
-
-            _context.Entry(transaction).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpDelete]
-        public async Task<IActionResult> DeleteTransaction(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             var transaction = await _context.Transactions.FindAsync(id);
+            if (transaction == null || transaction.UserId != User.Identity.Name)
+                return NotFound();
+
+            var dto = new TransactionDto
+            {
+                CategoryId = transaction.CategoryId,
+                Date = transaction.Date,
+                Amount = transaction.Amount,
+                Description = transaction.Description
+            };
+
+            ViewBag.Categories = _context.Categories.ToList();
+            return View(dto);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(int id, TransactionDto transactionDto)
+        {
+            var transaction = await _context.Transactions.FindAsync(id);
+            if (transaction == null || transaction.UserId != User.Identity.Name) 
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Categories = _context.Categories.ToList();
+                return View(transactionDto);
+            }
+
+            var category = await _context.Categories.FindAsync(transactionDto.CategoryId);
+            if (category == null)
+            {
+                ModelState.AddModelError("CategoryId", "Invalid category!");
+                ViewBag.Categories = _context.Categories.ToList();
+                return View(transactionDto);
+            }
+
+            transaction.CategoryId = transactionDto.CategoryId;
+            transaction.Date = transactionDto.Date == default ? DateTime.Now : transactionDto.Date;
+            transaction.Amount = transactionDto.Amount;
+            transaction.Description = transactionDto.Description;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index");
+        }
+
+        public async Task<IActionResult> Delete(int id)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Category)
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == User.Identity.Name);
+
             if (transaction == null)
-                return NotFound("Transaction does not exist!");
+                return NotFound();
 
             _context.Transactions.Remove(transaction);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return RedirectToAction("Index");
         }
     }
 }
